@@ -65,14 +65,14 @@ flowchart LR
 
 ## 4. 데이터 범위
 
-실제 시장 데이터와 기업 내부 대체 Simulation 데이터를 명확히 분리했습니다.
+시장 데이터는 공개 API에서 수집하고, 기업 내부에서만 확보할 수 있는 수요·재고·입고·리드타임 데이터는 Simulation으로 분리했습니다.
 
-| 구분 | 데이터 | 범위 |
+| 구분 | 데이터 | 데이터 소스 / 범위 |
 |---|---|---|
-| 도매가격·거래량 | aT 온라인도매시장 | 실제 공공데이터 |
-| 소매가격 | KAMIS | 실제 공공데이터 |
-| 기상 | 기상청 ASOS | 실제 공공데이터 |
-| 가격 Risk Feature | 시장 데이터 기반 | 실제 관측 기반 |
+| 도매가격·거래량 | aT 온라인도매시장 | [한국농수산식품유통공사 온라인 도매시장 거래정보](https://www.data.go.kr/data/15141811/openapi.do) |
+| 소매가격 | KAMIS | [한국농수산식품유통공사 일별 도·소매 가격정보](https://www.data.go.kr/data/15156057/openapi.do) |
+| 기상 | 기상청 ASOS | [기상청 지상(종관, ASOS) 일자료 조회서비스](https://www.data.go.kr/data/15059093/openapi.do) |
+| 가격 Risk Feature | 시장 데이터 기반 | 위 공개 시장데이터를 활용한 파생 Feature |
 | 수요·재고·입고량 | 기업 내부 데이터 대체 | Simulation |
 | Lead Time | 기업 내부 데이터 대체 | Simulation |
 | Safety Stock | 정책 변수 | Simulation |
@@ -80,9 +80,12 @@ flowchart LR
 
 ### 수집 데이터
 
-- **aT 온라인도매시장:** 3,037 rows · 2023-10-16 ~ 2026-10-13
-- **KAMIS:** 7,148 rows · 2023-10-16 ~ 2026-10-08
-- **기상청 ASOS:** 4,137 rows · 2023-01-01 ~ 2026-10-10
+- **aT 온라인도매시장:** 3,037 rows · 2023-10-16 ~ 2026-10-13  
+  Source: [공공데이터포털 — 온라인 도매시장 거래정보](https://www.data.go.kr/data/15141811/openapi.do)
+- **KAMIS:** 7,148 rows · 2023-10-16 ~ 2026-10-08  
+  Source: [공공데이터포털 — 일별 도·소매 가격정보](https://www.data.go.kr/data/15156057/openapi.do)
+- **기상청 ASOS:** 4,137 rows · 2023-01-01 ~ 2026-10-10  
+  Source: [공공데이터포털 — 지상(종관, ASOS) 일자료 조회서비스](https://www.data.go.kr/data/15059093/openapi.do)
 
 ---
 
@@ -286,35 +289,36 @@ Decision Mart와 Evaluation Mart를 분리해 **사후 실제값이 의사결정
 
 ## 11. Dashboard
 
-Streamlit Dashboard에서는 특정 주차를 선택해 다음 정보를 확인할 수 있습니다.
+Streamlit Dashboard는 주차별 시장 가격 Risk, 재고 상태, 권장 발주량과 정책 적용 결과를 한 화면에서 확인할 수 있도록 구성했습니다.
 
-- 현재 / 예측 가격지수
-- 현재 / 예측 Risk Level
-- 재고 Position
-- 예상 주간 수요
-- Baseline 발주량
-- 권장 발주량
-- 발주 Timing 조정
-- 가격 Risk Trend
-- 재고 상태
-- 주간 의사결정 History
-- Policy Backtest
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <b>① 주간 의사결정 개요</b><br><br>
+      <img src="docs/images/dashboard_overview.png" alt="주간 의사결정 개요" width="100%"><br><br>
+      현재·예측 가격지수, 재고 포지션, 권장 발주량과 최종 액션을 요약합니다.
+    </td>
+    <td align="center" width="50%">
+      <b>② 시장 가격 위험 · 재고 상태</b><br><br>
+      <img src="docs/images/dashboard_action_inventory.png" alt="시장 가격 위험 및 재고 상태" width="100%"><br><br>
+      가격 Risk 추이와 가용재고·예상수요·리드타임·안전재고를 함께 확인합니다.
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <b>③ 의사결정 이력 · 정책 백테스트</b><br><br>
+      <img src="docs/images/dashboard_history_backtest.png" alt="의사결정 이력 및 정책 백테스트" width="100%"><br><br>
+      주차별 기본·권장 발주량과 발주 조정 이력을 추적하고 정책 Backtest 결과를 확인합니다.
+    </td>
+    <td align="center" width="50%">
+      <b>④ 선행 발주 사례</b><br><br>
+      <img src="docs/images/dashboard_advance_purchase.png" alt="선행 발주 사례" width="100%"><br><br>
+      가격 위험이 정상→주의로 전환될 것으로 예측된 주차에서 선행 발주가 생성되는 과정을 보여줍니다.
+    </td>
+  </tr>
+</table>
 
-> 시장 데이터는 실제 국내 공공데이터이며, 기업 SCM 수요·재고·리드타임은 Simulation 데이터입니다.
-
-### Dashboard Screenshot
-
-이미지를 아래 경로에 추가하세요.
-
-```text
-docs/images/dashboard.png
-```
-
-README에서는 다음과 같이 표시할 수 있습니다.
-
-```markdown
-![RetailOps AX Dashboard](docs/images/dashboard.png)
-```
+> 시장 데이터는 위 공개 API에서 수집했으며, 기업 SCM 수요·재고·입고·리드타임은 Simulation 데이터입니다.
 
 ---
 
