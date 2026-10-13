@@ -1,0 +1,31 @@
+# RetailOps AX
+# Recommended: Python 3.12
+
+# Data handling
+pandas>=2.2,<3.0
+numpy>=1.26,<3.0
+
+# API / environment
+requests>=2.31,<3.0
+python-dotenv>=1.0,<2.0
+
+# PostgreSQL
+SQLAlchemy>=2.0,<3.0
+psycopg2-binary>=2.9,<3.0
+
+# Modeling
+scikit-learn>=1.5,<2.0
+
+# Visualization / serving
+streamlit>=1.39,<2.0
+altair>=5.4,<6.0
+matplotlib>=3.9,<4.0
+
+# Notebook execution
+jupyter>=1.1,<2.0
+nbconvert>=7.16,<8.0
+ipykernel>=6.29,<7.0
+
+# dbt
+dbt-core==1.12.5
+dbt-postgres==1.11.0

@@ -1,0 +1,38 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+
+    tables:
+      - name: at_online_trade
+
+      - name: kamis_price
+
+      - name: kma_asos_weather
+        description: "양파 주요 생산권 대표 ASOS 일별 기상 원천 데이터"
+
+        columns:
+          - name: weather_date
+            tests:
+              - not_null
+
+          - name: station_id
+            tests:
+              - not_null
+
+          - name: region_code
+            tests:
+              - not_null
+
+      - name: scm_decision_engine_weekly
+        description: >
+            Python SCM Decision Engine의 주간 의사결정 출력.
+            공공시장 실제 데이터 기반 Price Risk Signal과
+            시뮬레이션된 수요·재고·리드타임을 결합한 발주 추천 결과.
+
+      - name: scm_decision_evaluation_weekly
+        description: >
+            SCM Decision Policy의 사후 평가 데이터.
+            실제 결과가 확정된 이후 Backtest 및 KPI 평가에만 사용하며,
+            의사결정 시점의 입력 데이터로 사용하지 않는다.

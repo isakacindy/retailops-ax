@@ -1,0 +1,40 @@
+name: 'retailops_dbt'
+version: '1.0.0'
+config-version: 2
+
+profile: 'retailops_dbt'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  retailops_dbt:
+
+    staging:
+      +materialized: view
+
+    intermediate:
+      +materialized: view
+
+    marts:
+      +materialized: table
+
+
+seeds:
+  retailops_dbt:
+
+    product_source_mapping:
+      +column_types:
+        source: varchar(20)
+        source_product_code: varchar(50)
+        source_product_name: varchar(100)
+        standard_product_id: varchar(20)
+        standard_product_name: varchar(100)

@@ -1,0 +1,92 @@
+version: 2
+
+models:
+
+  - name: mart_scm_decision_weekly
+    description: >
+      주간 SCM Decision Serving Mart.
+      공공시장 실제 데이터 기반 Price Risk Signal과
+      시뮬레이션된 기업 수요·재고·리드타임을 결합하여
+      Baseline 및 Risk-aware 발주 추천 결과를 제공한다.
+
+    columns:
+
+      - name: decision_week
+        description: 주간 SCM 의사결정 기준일
+        data_tests:
+          - not_null
+
+      - name: product_id
+        description: 내부 표준 상품 ID
+        data_tests:
+          - not_null
+
+      - name: recommended_order_qty_kg
+        description: Risk-aware 정책 기준 추천 발주량
+        data_tests:
+          - not_null
+
+      - name: decision_signal
+        description: 최종 SCM 의사결정 Signal
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - ADVANCE_PURCHASE
+                  - EARLY_WATCH_HOLD
+                  - OFFSET_REDUCTION
+                  - BASELINE_REPLENISHMENT
+                  - BASELINE_NO_FORECAST
+
+      - name: market_data_scope
+        description: 시장 데이터 실제/시뮬레이션 구분
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - PUBLIC_ACTUAL
+
+      - name: enterprise_data_scope
+        description: 기업 내부 데이터 실제/시뮬레이션 구분
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - SIMULATED
+
+      - name: decision_scope
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - SIMULATION
+
+
+  - name: mart_scm_decision_evaluation_weekly
+    description: >
+      SCM Decision Policy의 사후 평가 Mart.
+      실제 결과가 확정된 이후 Backtest 및 KPI 평가에 사용하며,
+      의사결정 시점의 입력으로 사용하지 않는다.
+
+    columns:
+
+      - name: decision_week
+        data_tests:
+          - not_null
+
+      - name: product_id
+        data_tests:
+          - not_null
+
+      - name: actual_weekly_demand_kg
+        data_tests:
+          - not_null
+
+      - name: lost_sales_kg
+        data_tests:
+          - not_null
+
+      - name: fill_rate
+        data_tests:
+          - not_null

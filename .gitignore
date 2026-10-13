@@ -1,0 +1,79 @@
+# =========================================================
+# Environment / Secrets
+# =========================================================
+.env
+.env.*
+!.env.example
+
+# =========================================================
+# Python
+# =========================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# =========================================================
+# Jupyter
+# =========================================================
+.ipynb_checkpoints/
+
+# =========================================================
+# macOS / IDE
+# =========================================================
+.DS_Store
+.idea/
+.vscode/
+
+# =========================================================
+# dbt
+# =========================================================
+retailops_dbt/target/
+retailops_dbt/logs/
+retailops_dbt/dbt_packages/
+retailops_dbt/.user.yml
+profiles.yml
+
+# =========================================================
+# Local database / temporary files
+# =========================================================
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.tmp
+*.temp
+
+# =========================================================
+# Generated data
+# Public source data can be reproduced via the pipeline.
+# Keep folder structure with .gitkeep if needed.
+# =========================================================
+data/raw/*
+!data/raw/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
+
+# =========================================================
+# Streamlit
+# =========================================================
+.streamlit/secrets.toml
+
+# =========================================================
+# Misc
+# =========================================================
+Thumbs.db

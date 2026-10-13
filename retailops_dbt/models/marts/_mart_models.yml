@@ -1,0 +1,30 @@
+version: 2
+
+models:
+
+  - name: dim_product
+    description: "데이터 소스 간 상품코드를 통합한 표준 상품 마스터"
+
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique
+
+      - name: product_name
+        tests:
+          - not_null
+
+
+  - name: mart_product_daily
+    description: "도매 거래량·가격과 소매가격을 통합한 일별 SCM 분석 Mart"
+
+    columns:
+
+      - name: date
+        tests:
+          - not_null
+
+      - name: product_id
+        tests:
+          - not_null

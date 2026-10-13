@@ -1,0 +1,63 @@
+version: 2
+
+models:
+
+  - name: stg_at_online_trade
+    description: "aT 온라인 도매시장 거래정보 정제 모델"
+
+    columns:
+
+      - name: trade_date
+        tests:
+          - not_null
+
+      - name: category_s_cd
+        tests:
+          - not_null
+
+      - name: confirmed_qty
+        tests:
+          - not_null
+
+      - name: avg_price
+        tests:
+          - not_null
+
+
+  - name: stg_kamis_price
+    description: "KAMIS 서울 양파 소매가격 정제 모델"
+
+    columns:
+
+      - name: survey_date
+        tests:
+          - not_null
+
+      - name: item_cd
+        tests:
+          - not_null
+
+      - name: market_cd
+        tests:
+          - not_null
+
+      - name: converted_price
+        tests:
+          - not_null
+
+  - name: stg_kma_asos_weather
+    description: "양파 생산권 대표 ASOS 일별 기상 staging"
+
+    columns:
+
+      - name: weather_date
+        tests:
+          - not_null
+
+      - name: station_id
+        tests:
+          - not_null
+
+      - name: region_code
+        tests:
+          - not_null
