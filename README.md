@@ -39,27 +39,179 @@ API 수집 → PostgreSQL → dbt → Risk 예측 → 재고·발주 정책 → 
 
 ---
 
-## 3. Architecture
+## 3. 주요 개발 내용
+
+### 3-1. 아키텍처
+
+공공데이터 수집부터 데이터 모델링, 가격 Risk 예측, SCM 정책 적용, 의사결정 제공까지 하나의 흐름으로 연결했습니다.
 
 ```mermaid
 flowchart LR
-    A1[aT API] --> B[Raw CSV]
-    A2[KAMIS API] --> B
-    A3[KMA ASOS API] --> B
+    subgraph S1[Public Data Sources]
+        A1[aT 온라인도매시장]
+        A2[KAMIS]
+        A3[기상청 ASOS]
+    end
 
-    B --> C[(PostgreSQL Raw)]
-    C --> D[dbt Staging]
-    D --> E[dbt Intermediate]
-    E --> F[Market / Risk Mart]
+    subgraph S2[Data Ingestion]
+        B1[Python Extract]
+        B2[Raw CSV]
+        B3[(PostgreSQL raw)]
+    end
 
-    F --> G[Price Risk Model]
-    G --> H[SCM Decision Engine]
-    H --> I[(Decision Output)]
-    I --> J[dbt Decision Mart]
+    subgraph S3[Transformation & Quality]
+        C1[dbt Staging]
+        C2[dbt Intermediate]
+        C3[Market / Risk Mart]
+        C4[Data Quality Tests]
+    end
 
-    J --> K[Weekly Brief]
-    J --> L[Streamlit Dashboard]
+    subgraph S4[Analytics & Decision]
+        D1[Price Risk Model]
+        D2[SCM Policy Simulation]
+        D3[Decision Engine]
+    end
+
+    subgraph S5[Serving]
+        E1[(Decision Mart)]
+        E2[Weekly Decision Brief]
+        E3[Streamlit Dashboard]
+    end
+
+    A1 --> B1
+    A2 --> B1
+    A3 --> B1
+    B1 --> B2 --> B3
+    B3 --> C1 --> C2 --> C3
+    C1 --> C4
+    C2 --> C4
+    C3 --> D1 --> D2 --> D3
+    D3 --> E1
+    E1 --> E2
+    E1 --> E3
 ```
+
+> 시장 데이터는 공개 API 기반이며, 기업 내부 수요·재고·입고·리드타임은 Simulation으로 분리해 의사결정 로직을 검증했습니다.
+
+### 3-2. ERD
+
+아래 ERD는 분석·의사결정 계층의 핵심 테이블 간 관계를 나타낸 **Logical ERD**입니다. 실제 PostgreSQL의 물리 FK 제약을 의미하지는 않습니다.
+
+```mermaid
+erDiagram
+    DIM_PRODUCT {
+        string product_id PK
+        string product_name
+    }
+
+    MART_PRODUCT_DAILY {
+        date date PK
+        string product_id PK
+        float at_price
+        float at_qty
+        float kamis_price
+        int kamis_freshness_age
+    }
+
+    MART_SCM_RISK_WEEKLY {
+        date week_end_date PK
+        string product_id PK
+        float price_index_12w
+        float qty_index_12w
+        float price_log_change_1w
+        boolean is_complete_week
+    }
+
+    SCM_DECISION_ENGINE_WEEKLY {
+        date decision_week PK
+        string product_id PK
+        float forecast_price_index
+        string forecast_risk_level
+        float inventory_position_kg
+        float baseline_order_qty_kg
+        float recommended_order_qty_kg
+        string decision_signal
+    }
+
+    MART_SCM_DECISION_WEEKLY {
+        date decision_week PK
+        string product_id PK
+        string market_data_scope
+        string enterprise_data_scope
+        string decision_scope
+        float recommended_order_qty_kg
+        float advance_order_qty_kg
+        float offset_reduction_qty_kg
+        string policy_version
+    }
+
+    MART_SCM_DECISION_EVALUATION_WEEKLY {
+        date decision_week PK
+        string product_id PK
+        float actual_price_index
+        float actual_weekly_demand_kg
+        float lost_sales_kg
+        float fill_rate
+    }
+
+    DIM_PRODUCT ||--o{ MART_PRODUCT_DAILY : product_id
+    DIM_PRODUCT ||--o{ MART_SCM_RISK_WEEKLY : product_id
+    MART_SCM_RISK_WEEKLY ||--o{ SCM_DECISION_ENGINE_WEEKLY : risk_signal
+    SCM_DECISION_ENGINE_WEEKLY ||--|| MART_SCM_DECISION_WEEKLY : transform
+    MART_SCM_DECISION_WEEKLY ||--|| MART_SCM_DECISION_EVALUATION_WEEKLY : evaluate
+```
+
+의사결정용 Mart와 평가용 Mart를 분리해, **사후 실제값이 Decision Input에 섞이지 않도록 구조적으로 분리**했습니다.
+
+### 3-3. 기술 스택
+
+<table>
+  <tr>
+    <th>구분</th>
+    <th>기술</th>
+    <th>활용</th>
+  </tr>
+  <tr>
+    <td><b>Data Collection</b></td>
+    <td>Python · Requests</td>
+    <td>aT · KAMIS · 기상청 API 수집</td>
+  </tr>
+  <tr>
+    <td><b>Data Warehouse</b></td>
+    <td>PostgreSQL</td>
+    <td>Raw / Decision Output 적재</td>
+  </tr>
+  <tr>
+    <td><b>Transformation</b></td>
+    <td>dbt · SQL</td>
+    <td>Staging · Intermediate · Mart · Data Test</td>
+  </tr>
+  <tr>
+    <td><b>Analysis / Modeling</b></td>
+    <td>pandas · NumPy · scikit-learn · Jupyter</td>
+    <td>시계열 검증 · Ridge Regression · 정책 시뮬레이션</td>
+  </tr>
+  <tr>
+    <td><b>Serving</b></td>
+    <td>Streamlit · Altair</td>
+    <td>SCM Decision Dashboard</td>
+  </tr>
+  <tr>
+    <td><b>Automation</b></td>
+    <td>Python subprocess · nbconvert · dbt build/test</td>
+    <td>End-to-End 재현 파이프라인</td>
+  </tr>
+</table>
+
+<p>
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/dbt-FF694B?logo=dbt&logoColor=white" />
+  <img src="https://img.shields.io/badge/scikit--learn-F7931E?logo=scikitlearn&logoColor=white" />
+  <img src="https://img.shields.io/badge/pandas-150458?logo=pandas&logoColor=white" />
+  <img src="https://img.shields.io/badge/Jupyter-F37626?logo=jupyter&logoColor=white" />
+  <img src="https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white" />
+</p>
 
 ---
 
@@ -404,6 +556,12 @@ streamlit run app/app.py
 retailops-ax/
 ├── app/
 │   └── app.py
+├── docs/
+│   └── images/
+│       ├── dashboard_overview.png
+│       ├── dashboard_action_inventory.png
+│       ├── dashboard_history_backtest.png
+│       └── dashboard_advance_purchase.png
 ├── data/
 │   ├── raw/
 │   └── processed/
@@ -432,32 +590,16 @@ retailops-ax/
 │       ├── load_kamis.py
 │       ├── load_weather.py
 │       └── load_decision_outputs.py
-├── .env
+├── .env.example
+├── .gitignore
+├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## 15. Tech Stack
 
-**Data Engineering**  
-Python · PostgreSQL · SQL · dbt
-
-**Data Analysis / Modeling**  
-pandas · NumPy · scikit-learn · TimeSeriesSplit · Ridge Regression
-
-**Data Sources**  
-aT 온라인도매시장 API · KAMIS API · 기상청 ASOS API
-
-**Serving / Visualization**  
-Streamlit · Altair
-
-**Automation**  
-Python subprocess · Jupyter nbconvert · dbt build / test
-
----
-
-## 16. Key Design Decisions
+## 15. Key Design Decisions
 
 ### 1. 예측 성능보다 Decision 연결을 우선
 
@@ -487,7 +629,7 @@ Decision Scope   = SIMULATION
 
 ---
 
-## 17. Limitations
+## 16. Limitations
 
 - Pilot SKU가 양파 1개 품목에 한정
 - 기업 실제 POS / Inventory / Purchase Order 데이터 미사용
@@ -501,7 +643,7 @@ Decision Scope   = SIMULATION
 
 ---
 
-## 18. Next Steps
+## 17. Next Steps
 
 ```text
 POS / Order History
@@ -533,7 +675,7 @@ src/brief/generate_scm_brief.py
 
 ---
 
-## 19. Summary
+## 18. Summary
 
 RetailOps AX는 데이터 수집, 예측, 대시보드에서 끝나지 않습니다.
 
