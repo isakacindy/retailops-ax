@@ -22,10 +22,10 @@ RetailOps AX는 단순한 가격 예측 프로젝트가 아니라, **시장 데�
 ### 📌 기존 업무 흐름 → RetailOps AX
 
 ```text
-기존
+<기존>
 데이터 조회 → 엑셀 정리 → 가격/수급 확인 → 재고 점검 → 발주량 판단 → 보고
 
-RetailOps AX
+<RetailOps AX>
 API 수집 → PostgreSQL → dbt → Risk 예측 → 재고/발주 정책
 → Decision Mart → Weekly Brief / Dashboard
 ```
