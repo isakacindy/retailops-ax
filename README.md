@@ -19,7 +19,7 @@ RetailOps AX는 단순한 가격 예측 프로젝트가 아니라, **시장 데�
 | **주요 산출물** | Decision Mart / Weekly Decision Brief / Streamlit Dashboard |
 | **자동화** | API 수집부터 Brief 생성까지 End-to-End Pipeline |
 
-### 기존 업무 흐름 → RetailOps AX
+### 📌 기존 업무 흐름 → RetailOps AX
 
 ```text
 기존
@@ -30,7 +30,7 @@ API 수집 → PostgreSQL → dbt → Risk 예측 → 재고/발주 정책
 → Decision Mart → Weekly Brief / Dashboard
 ```
 
-### Pilot SKU로 양파를 선택한 이유
+### 🧅 Pilot SKU로 양파를 선택한 이유
 
 양파는 국내 공개데이터만으로 **도매가격/거래량 → 소매가격 → 생산지역 기상 Proxy**를 연결할 수 있고, 계절성과 가격 변동성이 존재해 End-to-End SCM 파이프라인을 검증하기에 적합했습니다.
 
@@ -51,33 +51,79 @@ API 수집 → PostgreSQL → dbt → Risk 예측 → 재고/발주 정책
 Streamlit Dashboard에서 주차별 시장 가격 Risk, 재고 상태, 권장 발주량과 정책 적용 결과를 확인할 수 있습니다.
 
 <table>
+  <!-- 1행: 제목 -->
   <tr>
     <td align="center" width="50%">
-      <b>주간 의사결정 개요</b><br><br>
-      <img src="docs/images/dashboard_overview.png" alt="주간 의사결정 개요" width="100%"><br><br>
-      현재/예측 가격지수, 재고 포지션, 권장 발주량과 최종 액션을 한 화면에서 확인합니다.
+      <b>주간 의사결정 개요</b>
     </td>
     <td align="center" width="50%">
-      <b>시장 가격 위험 / 재고 상태</b><br><br>
-      <img src="docs/images/dashboard_action_inventory.png" alt="시장 가격 위험 및 재고 상태" width="100%"><br><br>
-      가격 Risk 추이와 가용재고/예상수요/리드타임/안전재고를 함께 확인합니다.
+      <b>시장 가격 위험 / 재고 상태</b>
     </td>
   </tr>
+
+  <!-- 2행: 이미지 -->
   <tr>
-    <td align="center" width="50%">
-      <b>의사결정 이력 / 정책 백테스트</b><br><br>
-      <img src="docs/images/dashboard_history_backtest.png" alt="의사결정 이력 및 정책 백테스트" width="100%"><br><br>
-      주차별 기본/권장 발주량과 발주 조정 이력, 정책 Backtest 결과를 확인합니다.
+    <td align="center">
+      <img src="docs/images/dashboard_overview.png"
+           alt="주간 의사결정 개요"
+           width="100%">
     </td>
-    <td align="center" width="50%">
-      <b>선행 발주 사례</b><br><br>
-      <img src="docs/images/dashboard_advance_purchase.png" alt="선행 발주 사례" width="100%"><br><br>
-      2026-09-27 가격 위험이 정상→주의로 전환될 것으로 예측되어 기본 5,000kg 대비 1,500kg을 앞당겨 총 6,500kg 발주를 권고한 사례입니다.
+    <td align="center">
+      <img src="docs/images/dashboard_risk_inventory.png"
+           alt="시장 가격 위험 및 재고 상태"
+           width="100%">
+    </td>
+  </tr>
+
+  <!-- 3행: 설명 -->
+  <tr>
+    <td align="center">
+      현재/예측 가격지수, 재고 포지션, 권장 발주량과
+      최종 액션을 한 화면에서 확인합니다.
+    </td>
+    <td align="center">
+      가격 Risk 추이와 가용재고, 예상수요,
+      리드타임, 안전재고를 함께 확인합니다.
+    </td>
+  </tr>
+
+  <!-- 4행: 제목 -->
+  <tr>
+    <td align="center">
+      <b>의사결정 이력 / 정책 백테스트</b>
+    </td>
+    <td align="center">
+      <b>선행 발주 사례</b>
+    </td>
+  </tr>
+
+  <!-- 5행: 이미지 -->
+  <tr>
+    <td align="center">
+      <img src="docs/images/dashboard_history_backtest.png"
+           alt="의사결정 이력 및 정책 백테스트"
+           width="100%">
+    </td>
+    <td align="center">
+      <img src="docs/images/dashboard_advance_purchase.png"
+           alt="선행 발주 사례"
+           width="100%">
+    </td>
+  </tr>
+
+  <!-- 6행: 설명 -->
+  <tr>
+    <td align="center">
+      주차별 기본/권장 발주량과 발주 조정 이력,
+      정책 Backtest 결과를 확인합니다.
+    </td>
+    <td align="center">
+      2026-09-27 가격 위험이 정상→주의로 전환될 것으로 예측되어
+      기본 5,000kg 대비 1,500kg을 앞당겨
+      총 6,500kg 발주를 권고한 사례입니다.
     </td>
   </tr>
 </table>
-
-> 시장 데이터는 공개 API에서 수집했으며, 기업 SCM 수요/재고/입고/리드타임은 Simulation 데이터입니다.
 
 ## 4) 주요 개발 내용
 
@@ -452,7 +498,7 @@ retailops-ax/
 
 ## 8) 설계 판단 및 한계
 
-### 주요 설계 판단
+### 🤔 주요 설계 판단
 
 - **예측 성능보다 Decision 연결을 우선**  
   `Prediction → Risk Signal → Inventory Policy → Order Adjustment → Decision Output` 구조로 설계했습니다.
@@ -471,7 +517,7 @@ Enterprise Data  = SIMULATED
 Decision Scope   = SIMULATION
 ```
 
-### Limitations
+### 💥 Limitations
 
 - Pilot SKU가 양파 1개 품목에 한정
 - 기업 실제 POS / Inventory / Purchase Order 데이터 미사용
@@ -483,7 +529,7 @@ Decision Scope   = SIMULATION
 
 현재 결과는 실제 기업 운영 성과가 아니라 **SCM Decision Automation Architecture와 Policy Logic을 검증한 PoC**로 해석합니다.
 
-### Next Steps
+### 🔜 Next Steps
 
 ```text
 POS / Order History        → 실제 Demand Forecast
