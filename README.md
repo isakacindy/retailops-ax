@@ -2,46 +2,86 @@
 
 ### 국내 유통 데이터 기반 SCM Planning & Decision Automation
 
-국내 유통 공공데이터를 자동 수집·정형화하고, 검증된 **시장 가격 Risk Signal**을 재고·발주 정책과 연결해 **주간 SCM 의사결정까지 자동화한 End-to-End AX 프로젝트**입니다.
+국내 유통 공공데이터를 자동 수집/정형화하고, 검증된 **시장 가격 Risk Signal**을 재고/발주 정책과 연결해 **주간 SCM 의사결정까지 자동화한 End-to-End AX 프로젝트**입니다.
 
-> **Public Market Data → PostgreSQL → dbt → Price Risk Model → SCM Decision Engine → Decision Mart → Weekly Brief → Dashboard**
 
----
+## 1) 프로젝트 소개
 
-## 1. 프로젝트 개요
+RetailOps AX는 단순한 가격 예측 프로젝트가 아니라, **시장 데이터를 실제 SCM 발주 의사결정으로 연결하는 운영 흐름 전체를 설계**하는 것을 목표로 했습니다.
 
-RetailOps AX는 단순한 가격 예측 프로젝트가 아니라, **시장 데이터를 실제 SCM 의사결정으로 연결하는 운영 흐름 전체를 설계**하는 것을 목표로 했습니다.
+| 구분 | 내용 |
+|---|---|
+| **문제 정의** | 시장 가격 변화와 재고 상태를 사람이 따로 확인한 뒤 발주량을 판단하는 수작업 흐름 |
+| **목표** | 시장 Risk 감지 → 재고 정책 결합 → 발주 Timing 조정 → 의사결정 제공까지 자동화 |
+| **Pilot SKU** | 양파(P001) |
+| **시장 데이터** | aT 온라인도매시장 / KAMIS / 기상청 ASOS |
+| **기업 SCM 데이터** | 수요/재고/입고/리드타임 Simulation |
+| **주요 산출물** | Decision Mart / Weekly Decision Brief / Streamlit Dashboard |
+| **자동화** | API 수집부터 Brief 생성까지 End-to-End Pipeline |
+
+### 기존 업무 흐름 → RetailOps AX
 
 ```text
 기존
 데이터 조회 → 엑셀 정리 → 가격/수급 확인 → 재고 점검 → 발주량 판단 → 보고
 
 RetailOps AX
-API 수집 → PostgreSQL → dbt → Risk 예측 → 재고·발주 정책 → Decision Mart → Brief / Dashboard
+API 수집 → PostgreSQL → dbt → Risk 예측 → 재고/발주 정책
+→ Decision Mart → Weekly Brief / Dashboard
 ```
 
-핵심 질문은 다음과 같습니다.
+### Pilot SKU로 양파를 선택한 이유
 
-> **시장 가격이 오를 가능성을 미리 감지했을 때, SCM 담당자의 발주 의사결정은 어떻게 달라져야 하는가?**
+양파는 국내 공개데이터만으로 **도매가격/거래량 → 소매가격 → 생산지역 기상 Proxy**를 연결할 수 있고, 계절성과 가격 변동성이 존재해 End-to-End SCM 파이프라인을 검증하기에 적합했습니다.
 
----
+## 2) 핵심 결과
 
-## 2. Pilot SKU — 양파
+| 구분 | 결과 |
+|---|---|
+| **Price Risk Model** | Price + Season Ridge 모델이 Naive 대비 MAE 약 **18.7% 개선** |
+| **Feature Selection** | Weather Feature는 시계열 검증에서 성능이 악화되어 최종 모델에서 제외 |
+| **Inventory Policy** | 서비스 수준과 재고 부담을 비교해 **Safety Stock 7일**을 Working Policy로 사용 |
+| **Early Watch Backtest** | 최신 대시보드 기준 선행 발주 Trigger **3건**, 3건 모두 다음 주 상대가격지수 상승 |
+| **Order Timing** | 선행 발주 총량 **4,500kg**, 이후 후속 발주에서 상쇄되어 **순발주 증감 0kg** |
+| **Pipeline Quality** | Market/Risk dbt **32 PASS**, Decision Mart dbt **20 PASS**, Duplicate Key **0** |
+| **Decision Mart** | 54주 Decision / Evaluation 데이터 생성 및 검증 |
 
-양파는 국내 공공데이터만으로 도매가격·거래량, 소매가격, 생산지역 기상 Proxy를 연결할 수 있고 계절성과 가격 변동성이 존재해 End-to-End SCM 파이프라인을 검증하기에 적합했습니다.
+## 3) 서비스 소개
 
-- aT 온라인도매시장: 도매 거래가격·거래량
-- KAMIS: 소매가격
-- 기상청 ASOS: 목포·제주·합천 기상
-- 품종·유통단계별 데이터 표준화 이슈 존재
+Streamlit Dashboard에서 주차별 시장 가격 Risk, 재고 상태, 권장 발주량과 정책 적용 결과를 확인할 수 있습니다.
 
-> 양파를 가장 중요한 SCM 품목으로 가정한 것이 아니라, **국내 공공데이터 기반 SCM 의사결정 파이프라인을 검증하기 위한 Pilot SKU**로 사용했습니다.
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <b>주간 의사결정 개요</b><br><br>
+      <img src="docs/images/dashboard_overview.png" alt="주간 의사결정 개요" width="100%"><br><br>
+      현재/예측 가격지수, 재고 포지션, 권장 발주량과 최종 액션을 한 화면에서 확인합니다.
+    </td>
+    <td align="center" width="50%">
+      <b>시장 가격 위험 / 재고 상태</b><br><br>
+      <img src="docs/images/dashboard_action_inventory.png" alt="시장 가격 위험 및 재고 상태" width="100%"><br><br>
+      가격 Risk 추이와 가용재고/예상수요/리드타임/안전재고를 함께 확인합니다.
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <b>의사결정 이력 / 정책 백테스트</b><br><br>
+      <img src="docs/images/dashboard_history_backtest.png" alt="의사결정 이력 및 정책 백테스트" width="100%"><br><br>
+      주차별 기본/권장 발주량과 발주 조정 이력, 정책 Backtest 결과를 확인합니다.
+    </td>
+    <td align="center" width="50%">
+      <b>선행 발주 사례</b><br><br>
+      <img src="docs/images/dashboard_advance_purchase.png" alt="선행 발주 사례" width="100%"><br><br>
+      2026-09-27 가격 위험이 정상→주의로 전환될 것으로 예측되어 기본 5,000kg 대비 1,500kg을 앞당겨 총 6,500kg 발주를 권고한 사례입니다.
+    </td>
+  </tr>
+</table>
 
----
+> 시장 데이터는 공개 API에서 수집했으며, 기업 SCM 수요/재고/입고/리드타임은 Simulation 데이터입니다.
 
-## 3. 주요 개발 내용
+## 4) 주요 개발 내용
 
-### 3-1. 아키텍처
+### 4-1. 아키텍처
 
 공공데이터 수집부터 데이터 모델링, 가격 Risk 예측, SCM 정책 적용, 의사결정 제공까지 하나의 흐름으로 연결했습니다.
 
@@ -63,7 +103,7 @@ flowchart LR
         C1[dbt Staging]
         C2[dbt Intermediate]
         C3[Market / Risk Mart]
-        C4[Data Quality Tests]
+        C4[dbt Data Tests]
     end
 
     subgraph S4[Analytics & Decision]
@@ -91,11 +131,9 @@ flowchart LR
     E1 --> E3
 ```
 
-> 시장 데이터는 공개 API 기반이며, 기업 내부 수요·재고·입고·리드타임은 Simulation으로 분리해 의사결정 로직을 검증했습니다.
+### 4-2. ERD
 
-### 3-2. ERD
-
-아래 ERD는 분석·의사결정 계층의 핵심 테이블 간 관계를 나타낸 **Logical ERD**입니다. 실제 PostgreSQL의 물리 FK 제약을 의미하지는 않습니다.
+아래는 분석/의사결정 계층의 핵심 테이블 관계를 표현한 **Logical ERD**입니다. 실제 PostgreSQL의 물리 FK 제약을 의미하지는 않습니다.
 
 ```mermaid
 erDiagram
@@ -161,104 +199,63 @@ erDiagram
     MART_SCM_DECISION_WEEKLY ||--|| MART_SCM_DECISION_EVALUATION_WEEKLY : evaluate
 ```
 
-의사결정용 Mart와 평가용 Mart를 분리해, **사후 실제값이 Decision Input에 섞이지 않도록 구조적으로 분리**했습니다.
+Decision Mart와 Evaluation Mart를 분리해 **사후 실제값이 의사결정 Input에 유입되는 Leakage를 방지**했습니다.
 
-### 3-3. 기술 스택
+### 4-3. 기술 스택
 
-<table>
-  <tr>
-    <th>구분</th>
-    <th>기술</th>
-    <th>활용</th>
-  </tr>
-  <tr>
-    <td><b>Data Collection</b></td>
-    <td>Python · Requests</td>
-    <td>aT · KAMIS · 기상청 API 수집</td>
-  </tr>
-  <tr>
-    <td><b>Data Warehouse</b></td>
-    <td>PostgreSQL</td>
-    <td>Raw / Decision Output 적재</td>
-  </tr>
-  <tr>
-    <td><b>Transformation</b></td>
-    <td>dbt · SQL</td>
-    <td>Staging · Intermediate · Mart · Data Test</td>
-  </tr>
-  <tr>
-    <td><b>Analysis / Modeling</b></td>
-    <td>pandas · NumPy · scikit-learn · Jupyter</td>
-    <td>시계열 검증 · Ridge Regression · 정책 시뮬레이션</td>
-  </tr>
-  <tr>
-    <td><b>Serving</b></td>
-    <td>Streamlit · Altair</td>
-    <td>SCM Decision Dashboard</td>
-  </tr>
-  <tr>
-    <td><b>Automation</b></td>
-    <td>Python subprocess · nbconvert · dbt build/test</td>
-    <td>End-to-End 재현 파이프라인</td>
-  </tr>
-</table>
+#### Data Engineering
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)
 
-<p>
-  <img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/dbt-FF694B?logo=dbt&logoColor=white" />
-  <img src="https://img.shields.io/badge/scikit--learn-F7931E?logo=scikitlearn&logoColor=white" />
-  <img src="https://img.shields.io/badge/pandas-150458?logo=pandas&logoColor=white" />
-  <img src="https://img.shields.io/badge/Jupyter-F37626?logo=jupyter&logoColor=white" />
-  <img src="https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white" />
-</p>
+#### Analytics / Modeling
+![pandas](https://img.shields.io/badge/pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white)
+![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white)
 
----
+#### Visualization / Serving
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![Altair](https://img.shields.io/badge/Altair-1F77B4?style=for-the-badge&logo=vega&logoColor=white)
 
-## 4. 데이터 범위
+#### Version Control
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
 
-시장 데이터는 공개 API에서 수집하고, 기업 내부에서만 확보할 수 있는 수요·재고·입고·리드타임 데이터는 Simulation으로 분리했습니다.
+## 5) 데이터 및 분석 설계
+
+### 5-1. 데이터 범위
 
 | 구분 | 데이터 | 데이터 소스 / 범위 |
 |---|---|---|
-| 도매가격·거래량 | aT 온라인도매시장 | [한국농수산식품유통공사 온라인 도매시장 거래정보](https://www.data.go.kr/data/15141811/openapi.do) |
-| 소매가격 | KAMIS | [한국농수산식품유통공사 일별 도·소매 가격정보](https://www.data.go.kr/data/15156057/openapi.do) |
+| 도매가격/거래량 | aT 온라인도매시장 | [한국농수산식품유통공사 온라인 도매시장 거래정보](https://www.data.go.kr/data/15141811/openapi.do) |
+| 소매가격 | KAMIS | [한국농수산식품유통공사 일별 도/소매 가격정보](https://www.data.go.kr/data/15156057/openapi.do) |
 | 기상 | 기상청 ASOS | [기상청 지상(종관, ASOS) 일자료 조회서비스](https://www.data.go.kr/data/15059093/openapi.do) |
 | 가격 Risk Feature | 시장 데이터 기반 | 위 공개 시장데이터를 활용한 파생 Feature |
-| 수요·재고·입고량 | 기업 내부 데이터 대체 | Simulation |
+| 수요/재고/입고량 | 기업 내부 데이터 대체 | Simulation |
 | Lead Time | 기업 내부 데이터 대체 | Simulation |
 | Safety Stock | 정책 변수 | Simulation |
 | 권장 발주량 | Decision Engine | Simulation |
 
-### 수집 데이터
+**수집 데이터**
 
-- **aT 온라인도매시장:** 3,037 rows · 2023-10-16 ~ 2026-10-13  
-  Source: [공공데이터포털 — 온라인 도매시장 거래정보](https://www.data.go.kr/data/15141811/openapi.do)
-- **KAMIS:** 7,148 rows · 2023-10-16 ~ 2026-10-08  
-  Source: [공공데이터포털 — 일별 도·소매 가격정보](https://www.data.go.kr/data/15156057/openapi.do)
-- **기상청 ASOS:** 4,137 rows · 2023-01-01 ~ 2026-10-10  
-  Source: [공공데이터포털 — 지상(종관, ASOS) 일자료 조회서비스](https://www.data.go.kr/data/15059093/openapi.do)
+- **aT 온라인도매시장:** 3,037 rows / 2023-10-16 ~ 2026-10-13
+- **KAMIS:** 7,148 rows / 2023-10-16 ~ 2026-10-08
+- **기상청 ASOS:** 4,137 rows / 2023-01-01 ~ 2026-10-10
 
----
-
-## 5. Data Engineering
-
-### API → PostgreSQL → dbt
+### 5-2. Data Engineering & Quality
 
 ```text
-src/extract/
-├── extract_at.py
-├── extract_kamis.py
-└── extract_weather.py
-
-src/load/
-├── load_at.py
-├── load_kamis.py
-├── load_weather.py
-└── load_decision_outputs.py
+API
+→ Raw CSV
+→ PostgreSQL raw
+→ dbt staging
+→ dbt intermediate
+→ analytical marts
 ```
 
-dbt는 Staging → Intermediate → Mart 계층으로 구성했습니다.
+dbt 주요 모델:
 
 ```text
 stg_at_online_trade
@@ -278,34 +275,21 @@ mart_scm_decision_weekly
 mart_scm_decision_evaluation_weekly
 ```
 
-aT 거래 데이터는 이상치를 `HARD / REVIEW / OK`로 구분하고, 날짜 전체가 아닌 **record-level quarantine** 방식으로 처리했습니다.
+aT 거래 데이터는 이상치를 `HARD / REVIEW / OK`로 구분하고, 날짜 전체를 제외하지 않고 **record-level quarantine** 방식으로 관리했습니다.
 
----
+### 5-3. Price Risk Modeling
 
-## 6. Price Risk Modeling
-
-다음 주 상대 가격 Risk를 예측하고 이를 발주 Timing 조정에 사용할 수 있는지 검증했습니다.
+다음 주 상대 가격 Risk를 예측해 발주 Timing 조정에 사용할 수 있는지 검증했습니다.
 
 ```text
 Target = next_price_index
 Price Index = 과거 12주 trailing median 대비 상대값
 ```
 
-시계열 누수를 피하기 위해 Random Split이 아닌 **TimeSeriesSplit**을 사용했습니다.
+시계열 누수를 피하기 위해 Random Split 대신 **TimeSeriesSplit**을 사용했습니다.
 
-- 4 folds
-- Test size: 13 weeks
-- Model dataset: 114 weeks
 - Final Model: Ridge Regression
-
-최종 Feature:
-
-```text
-price_index_12w
-price_log_change_1w
-season_sin
-season_cos
-```
+- Features: `price_index_12w`, `price_log_change_1w`, `season_sin`, `season_cos`
 
 | Model | MAE | RMSE |
 |---|---:|---:|
@@ -314,21 +298,16 @@ season_cos
 | **Price + Season** | **0.0811** | **0.0952** |
 | Market + Weather | 0.0960 | 0.1142 |
 
-최종 `Price + Season` 모델은 Naive 대비 **MAE 약 18.7% 개선**했습니다.
+Weather Feature는 일부 상관관계가 있었지만 시계열 Validation에서 성능을 악화시켜 최종 핵심 Feature에서는 제외했습니다.
 
-Weather Feature는 일부 상관관계가 있었지만 시계열 Validation에서 성능을 악화시켜 최종 핵심 예측 Feature에서는 제외했습니다.
+### 5-4. SCM Decision Policy
 
----
-
-## 7. SCM Policy Simulation
-
-예측을 바로 발주량으로 변환하지 않고 두 정책을 분리했습니다.
+예측값을 바로 발주량으로 변환하지 않고 **Inventory Policy와 Price Risk Policy를 분리**했습니다.
 
 ```text
 Inventory Policy
 Demand + Lead Time + Safety Stock
 → Replenishment
-→ Service Level / Stockout
 
 Price Risk Policy
 Validated Price Forecast
@@ -337,25 +316,7 @@ Validated Price Forecast
 → Order Timing Shift
 ```
 
-- **Safety Stock:** 결품·서비스 수준 관리
-- **Price Risk Buffer:** 가격 상승 전 구매 Timing 조정
-
-### Safety Stock Sensitivity
-
-| Safety Stock | Fill Rate | Stockout Weeks | Lost Sales | Avg. Ending Inventory |
-|---:|---:|---:|---:|---:|
-| 0일 | 82.95% | 17 | 51,641kg | 1,383kg |
-| 3일 | 90.25% | 9 | 29,529kg | 2,795kg |
-| 5일 | 95.17% | 9 | 14,621kg | 3,759kg |
-| **7일** | **99.43%** | **4** | **1,713kg** | **4,827kg** |
-| 10일 | 100.00% | 0 | 0kg | 7,161kg |
-
-7일은 절대적인 최적값이 아니라, 본 Simulation에서 **서비스 수준과 재고 부담 간 균형을 비교하기 위한 Working Safety Stock Policy**로 선정했습니다.
-
-
----
-
-## 8. Price Risk-aware Decision Logic
+Price Risk Buffer:
 
 ```text
 Normal → Watch    +2 days
@@ -364,139 +325,32 @@ Watch  → Risk     +3 days
 그 외              0 days
 ```
 
-OOF Backtest에서는 `Normal → Watch` 4건이 발생했고,
+Safety Stock은 0/3/5/7/10일 시나리오를 비교한 뒤, 서비스 수준과 재고 부담의 균형을 보기 위한 **7일 Working Policy**를 사용했습니다.
 
-- 4건 모두 다음 주 상대가격지수 상승
-- 2건은 실제 `Risk Threshold (1.15)` 이상 진입
+### 5-5. Decision Mart
 
-했습니다.
-
-> Trigger가 4건뿐이므로 이를 **100% 예측 정확도**로 일반화하지 않습니다.
-
----
-
-## 9. Decision Policy Result
-
-7일 Safety Stock 기준 Baseline과 Risk-aware Policy를 비교했습니다.
-
-| KPI | Baseline | Risk-aware |
-|---|---:|---:|
-| Stockout Weeks | 4 | 3 |
-| Lost Sales | 1,713kg | 1,713kg |
-| Fill Rate | 99.434% | 99.434% |
-| Avg. Ending Inventory | 4,827kg | 4,947kg |
-| Total Order Qty | 299,000kg | 299,000kg |
-
-Stockout 발생 주차는 감소했지만 Lost Sales와 Fill Rate는 동일했습니다.
-
-따라서 Price Risk Policy의 핵심 효과는 **Stockout 개선이 아니라 발주 Timing 조정**으로 해석했습니다.
+`mart_scm_decision_weekly`에는 **의사결정 시점에 알 수 있는 정보만** 포함하고, 실제 결과는 `mart_scm_decision_evaluation_weekly`로 분리했습니다.
 
 ```text
-Advance Order Volume      6,000 kg
-Later Order Reduction     6,000 kg
-Net Order Change              0 kg
-Timing Offset Ratio          100%
-Average Inventory Change   +2.488%
+Decision Mart
+- current / forecast price index
+- current / forecast risk level
+- inventory position
+- forecast demand
+- lead time / safety stock / risk buffer
+- baseline / recommended order
+- decision signal / reason
+
+Evaluation Mart
+- actual price index
+- actual demand
+- lost sales
+- fill rate
 ```
 
-> **총 구매량을 늘리지 않고 6,000kg의 발주 시점을 앞당겼으며, 이후 동일한 6,000kg을 후속 발주에서 감축했습니다.**
+## 6) 자동화 및 산출물
 
----
-
-## 10. Decision Mart
-
-### `mart_scm_decision_weekly`
-
-의사결정 시점에 알 수 있는 정보만 포함합니다.
-
-```text
-decision_week
-product_id
-current_price_index
-forecast_price_index
-current_risk_level
-forecast_risk_level
-inventory_position_kg
-forecast_weekly_demand_kg
-lead_time_days
-safety_stock_days
-risk_buffer_days
-baseline_order_qty_kg
-recommended_order_qty_kg
-advance_order_qty_kg
-offset_reduction_qty_kg
-decision_signal
-decision_reason
-data_quality_flag
-policy_version
-```
-
-### `mart_scm_decision_evaluation_weekly`
-
-실제 결과가 확정된 이후 Backtest / KPI 평가에만 사용합니다.
-
-Decision Mart와 Evaluation Mart를 분리해 **사후 실제값이 의사결정 입력으로 유입되는 Leakage를 방지**했습니다.
-
----
-
-## 11. Dashboard
-
-Streamlit Dashboard는 주차별 시장 가격 Risk, 재고 상태, 권장 발주량과 정책 적용 결과를 한 화면에서 확인할 수 있도록 구성했습니다.
-
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <b>① 주간 의사결정 개요</b><br><br>
-      <img src="docs/images/dashboard_overview.png" alt="주간 의사결정 개요" width="100%"><br><br>
-      현재·예측 가격지수, 재고 포지션, 권장 발주량과 최종 액션을 요약합니다.
-    </td>
-    <td align="center" width="50%">
-      <b>② 시장 가격 위험 · 재고 상태</b><br><br>
-      <img src="docs/images/dashboard_action_inventory.png" alt="시장 가격 위험 및 재고 상태" width="100%"><br><br>
-      가격 Risk 추이와 가용재고·예상수요·리드타임·안전재고를 함께 확인합니다.
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <b>③ 의사결정 이력 · 정책 백테스트</b><br><br>
-      <img src="docs/images/dashboard_history_backtest.png" alt="의사결정 이력 및 정책 백테스트" width="100%"><br><br>
-      주차별 기본·권장 발주량과 발주 조정 이력을 추적하고 정책 Backtest 결과를 확인합니다.
-    </td>
-    <td align="center" width="50%">
-      <b>④ 선행 발주 사례</b><br><br>
-      <img src="docs/images/dashboard_advance_purchase.png" alt="선행 발주 사례" width="100%"><br><br>
-      가격 위험이 정상→주의로 전환될 것으로 예측된 주차에서 선행 발주가 생성되는 과정을 보여줍니다.
-    </td>
-  </tr>
-</table>
-
-> 시장 데이터는 위 공개 API에서 수집했으며, 기업 SCM 수요·재고·입고·리드타임은 Simulation 데이터입니다.
-
----
-
-## 12. Weekly Decision Brief
-
-Decision Mart를 SCM 담당자가 바로 읽을 수 있는 Markdown Brief로 자동 변환합니다.
-
-```text
-시장 가격 위험
-→ 현재 Risk / 다음 주 Watch
-
-재고 상태
-→ Inventory Position / Forecast Demand / Lead Time
-
-권장 액션
-→ Baseline 6,500kg
-→ Recommended 5,500kg
-→ Timing Adjustment -1,000kg
-
-Decision Reason
-→ 이전 선행발주 물량을 반영해 후속 발주량 축소
-```
-
----
-
-## 13. End-to-End Pipeline
+### 6-1. End-to-End Pipeline
 
 전체 Workflow는 한 명령으로 실행할 수 있습니다.
 
@@ -510,8 +364,6 @@ API 재수집 없이 기존 Raw Data로 재실행:
 python scripts/run_pipeline.py --skip-extract
 ```
 
-### Pipeline Flow
-
 ```text
 [1/8] Public Data Extraction
 [2/8] PostgreSQL Raw Load
@@ -523,34 +375,42 @@ python scripts/run_pipeline.py --skip-extract
 [8/8] SCM Brief / Final Validation
 ```
 
-최종 검증 결과:
+최종 실행 검증:
 
 ```text
-Market / Risk dbt Build
-PASS=32
-ERROR=0
-
-Decision Mart dbt Build
-PASS=20
-ERROR=0
-
-Decision Mart
-Rows: 54
-Unique Weeks: 54
-Duplicate Keys: 0
-
+Market / Risk dbt Build  PASS=32 / ERROR=0
+Decision Mart dbt Build PASS=20 / ERROR=0
+Decision Mart           Rows=54 / Unique Weeks=54 / Duplicate Keys=0
 PIPELINE COMPLETED SUCCESSFULLY
 ```
 
-Dashboard 실행:
+### 6-2. Weekly Decision Brief
+
+Decision Mart를 SCM 담당자가 바로 읽을 수 있는 Markdown Brief로 자동 변환합니다.
+
+```text
+시장 가격 위험
+→ 현재 / 다음 주 Risk
+
+재고 상태
+→ Inventory Position / Forecast Demand / Lead Time
+
+권장 액션
+→ Baseline Order
+→ Recommended Order
+→ Timing Adjustment
+
+Decision Reason
+→ 가격 Risk와 재고 정책을 함께 반영한 발주 의사결정 근거
+```
+
+### 6-3. Dashboard 실행
 
 ```bash
 streamlit run app/app.py
 ```
 
----
-
-## 14. Project Structure
+## 7) 프로젝트 구조
 
 ```text
 retailops-ax/
@@ -566,6 +426,7 @@ retailops-ax/
 │   ├── raw/
 │   └── processed/
 ├── notebooks/
+│   ├── 01_mart_eda.ipynb
 │   ├── 02_scm_risk_feature_eda.ipynb
 │   ├── 03_risk_model_validation.ipynb
 │   ├── 04_scm_decision_simulation.ipynb
@@ -582,44 +443,27 @@ retailops-ax/
 │   └── run_pipeline.py
 ├── src/
 │   ├── extract/
-│   │   ├── extract_at.py
-│   │   ├── extract_kamis.py
-│   │   └── extract_weather.py
 │   └── load/
-│       ├── load_at.py
-│       ├── load_kamis.py
-│       ├── load_weather.py
-│       └── load_decision_outputs.py
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
 
----
+## 8) 설계 판단 및 한계
 
+### 주요 설계 판단
 
-## 15. Key Design Decisions
+- **예측 성능보다 Decision 연결을 우선**  
+  `Prediction → Risk Signal → Inventory Policy → Order Adjustment → Decision Output` 구조로 설계했습니다.
 
-### 1. 예측 성능보다 Decision 연결을 우선
+- **Weather Feature를 억지로 사용하지 않음**  
+  데이터가 존재하더라도 시계열 검증에서 성능이 악화되면 최종 모델에서 제외했습니다.
 
-```text
-Prediction
-→ Risk Signal
-→ Inventory Policy
-→ Order Adjustment
-→ Decision Output
-```
+- **Classification 대신 Regression 유지**  
+  Risk Event가 특정 기간에 군집되어 있어 연속형 Price Index를 예측하고 운영 Threshold를 별도로 적용했습니다.
 
-### 2. Weather Feature를 억지로 사용하지 않음
-
-Weather Feature는 일부 상관관계가 있었지만 시계열 Validation에서 Market-only 모델보다 성능을 악화시켰습니다.
-
-### 3. Classification 대신 Regression 유지
-
-Risk Event가 특정 기간에 군집되어 Binary Classification은 안정적인 검증이 어려웠습니다. 따라서 연속형 Price Index를 예측하고 운영 Threshold를 별도로 적용했습니다.
-
-### 4. 실제 데이터와 Simulation을 명시적으로 구분
+- **실제 시장 데이터와 Simulation을 명시적으로 분리**
 
 ```text
 Market Data      = PUBLIC_ACTUAL
@@ -627,58 +471,25 @@ Enterprise Data  = SIMULATED
 Decision Scope   = SIMULATION
 ```
 
----
-
-## 16. Limitations
+### Limitations
 
 - Pilot SKU가 양파 1개 품목에 한정
 - 기업 실제 POS / Inventory / Purchase Order 데이터 미사용
 - Demand Forecast는 Simulation 기반
-- 실제 공급계약 가격·MOQ·구매 단위 미반영
+- 실제 공급계약 가격/MOQ/구매 단위 미반영
 - Price Risk Early Watch 사례 수가 제한적
 - 생산지 Weather는 농가 단위가 아닌 지역 Station Proxy
-- Notebook 기반 모델·정책 실행 단계가 일부 남아 있음
+- 모델/정책 실행 일부가 Notebook 기반
 
-따라서 현재 결과는 실제 기업 운영 성과가 아니라 **SCM Decision Automation Architecture와 Policy Logic을 검증한 PoC**로 해석합니다.
+현재 결과는 실제 기업 운영 성과가 아니라 **SCM Decision Automation Architecture와 Policy Logic을 검증한 PoC**로 해석합니다.
 
----
-
-## 17. Next Steps
+### Next Steps
 
 ```text
-POS / Order History
-→ 실제 Demand Forecast
-
-On-hand / Inbound / PO
-→ 실제 Inventory Position
-
-Supplier Lead Time / MOQ
-→ 실제 Replenishment Policy
-
-Purchase Price / Contract
-→ 실제 Procurement Cost Evaluation
-
-Multi-SKU
-→ Category-level Planning
-
-Scheduler / Orchestration
-→ Production Pipeline
+POS / Order History        → 실제 Demand Forecast
+On-hand / Inbound / PO     → 실제 Inventory Position
+Supplier Lead Time / MOQ   → 실제 Replenishment Policy
+Purchase Price / Contract  → 실제 Procurement Cost Evaluation
+Multi-SKU                  → Category-level Planning
+Scheduler / Orchestration  → Production Pipeline
 ```
-
-또한 Notebook에 남아 있는 최종 모델과 Decision Logic을 다음 모듈로 분리해 운영 파이프라인 의존성을 줄일 수 있습니다.
-
-```text
-src/model/run_price_risk_model.py
-src/decision/run_scm_decision_engine.py
-src/brief/generate_scm_brief.py
-```
-
----
-
-## 18. Summary
-
-RetailOps AX는 데이터 수집, 예측, 대시보드에서 끝나지 않습니다.
-
-> **공공 시장데이터를 운영 가능한 데이터 모델로 만들고, 검증된 가격 Risk Signal을 실제 SCM 정책과 연결하여, 사람이 실행할 수 있는 발주 의사결정으로 변환하는 것.**
-
-이를 통해 데이터 분석 결과가 실제 운영 Action까지 이어지는 **SCM Planning & Decision Automation 흐름**을 구현했습니다.
